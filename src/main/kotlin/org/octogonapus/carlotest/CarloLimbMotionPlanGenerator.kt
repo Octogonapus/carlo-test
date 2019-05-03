@@ -24,10 +24,11 @@ import com.neuronrobotics.bowlerkernel.kinematics.motion.MotionConstraints
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.LimbMotionPlan
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.LimbMotionPlanGenerator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.LimbMotionPlanStep
-import org.octogonapus.ktguava.collections.immutableListOf
+import org.octogonapus.ktguava.collections.toImmutableList
 
 class CarloLimbMotionPlanGenerator(
-    private val ikSolver: InverseKinematicsSolver
+    private val ikSolver: InverseKinematicsSolver,
+    private val numStepsPerPlan: Int = 5
 ) : LimbMotionPlanGenerator {
 
     override fun generatePlanForTaskSpaceTransform(
@@ -36,20 +37,31 @@ class CarloLimbMotionPlanGenerator(
         targetTaskSpaceTransform: FrameTransformation,
         motionConstraints: MotionConstraints
     ): LimbMotionPlan {
-        println("Generating plan")
+        val currentAngles = limb.getCurrentJointAngles()
 
         val targetAngles = ikSolver.solveChain(
             limb.getCurrentJointAngles(),
             targetTaskSpaceTransform
         )
 
-        return LimbMotionPlan(
-            immutableListOf(
-                LimbMotionPlanStep(
-                    targetAngles,
-                    BasicMotionConstraints(1, 10, 100, 100)
+        val steps = (1..numStepsPerPlan).map { stepNum ->
+            val fraction = stepNum / numStepsPerPlan.toDouble()
+
+            val angles = targetAngles.mapIndexed { index, elem ->
+                currentAngles[index] + (elem - currentAngles[index]) * fraction
+            }
+
+            LimbMotionPlanStep(
+                angles.toImmutableList(),
+                BasicMotionConstraints(
+                    motionConstraints.motionDuration.toDouble() / numStepsPerPlan,
+                    motionConstraints.maximumVelocity,
+                    motionConstraints.maximumAcceleration,
+                    motionConstraints.maximumJerk
                 )
             )
-        )
+        }.toImmutableList()
+
+        return LimbMotionPlan(steps)
     }
 }

@@ -1,37 +1,88 @@
-/*
- * This file is part of carlo-test.
- *
- * carlo-test is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * carlo-test is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public License
- * along with carlo-test.  If not, see <https://www.gnu.org/licenses/>.
- */
 package org.octogonapus.carlotest
 
-import com.neuronrobotics.bowlerkernel.hardware.Script
-import org.jlleitschuh.guice.getInstance
+import com.google.common.collect.ImmutableList
+import com.neuronrobotics.bowlerkernel.kinematics.base.DefaultKinematicBase
+import com.neuronrobotics.bowlerkernel.kinematics.base.baseid.SimpleKinematicBaseId
+import com.neuronrobotics.bowlerkernel.kinematics.closedloop.NoopBodyController
+import com.neuronrobotics.bowlerkernel.kinematics.limb.DefaultLimb
+import com.neuronrobotics.bowlerkernel.kinematics.limb.limbid.SimpleLimbId
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.DefaultLink
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.DhParam
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.Link
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.LinkType
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.toFrameTransformation
+import com.neuronrobotics.bowlerkernel.kinematics.motion.ForwardKinematicsSolver
+import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
+import com.neuronrobotics.bowlerkernel.kinematics.motion.InverseKinematicsSolver
+import com.neuronrobotics.bowlerkernel.kinematics.motion.NoopInertialStateEstimator
+import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.DefaultLimbMotionPlanFollower
+import com.neuronrobotics.bowlerkernel.util.Limits
 import org.junit.jupiter.api.Test
-import org.octogonapus.ktguava.collections.emptyImmutableList
+import org.octogonapus.ktguava.collections.immutableListOf
+import org.octogonapus.ktguava.collections.immutableMapOf
+import org.octogonapus.ktguava.collections.toImmutableList
 
 internal class CarloArmTest {
 
-    @Test
-    fun `test running the arm`() {
-        val script = Script.makeScriptInjector().createChildInjector(
-            Script.getDefaultModules()
-        ).getInstance<CarloArm>()
+    private val links: ImmutableList<Link> = immutableListOf(
+        DefaultLink(
+            LinkType.Rotary,
+            DhParam(44.45, 0, 196.85, 0),
+            Limits(180, -180),
+            NoopInertialStateEstimator
+        ),
+        DefaultLink(
+            LinkType.Rotary,
+            DhParam(38.1, 0, 273.05, 0),
+            Limits(180, -180),
+            NoopInertialStateEstimator
+        )
+    )
 
-        val result = script.startScript(emptyImmutableList())
-        Thread.sleep(1000)
-        script.stopAndCleanUp()
-        println(result)
+    private val dhParams = links.map { it.dhParam }.toImmutableList()
+
+    private val limb1Id = SimpleLimbId("carlo-arm-limb1")
+
+    private val fkEngine = object : ForwardKinematicsSolver {
+        override fun solveChain(currentJointAngles: ImmutableList<Double>) =
+            dhParams.mapIndexed { index, dhParam ->
+                dhParam.copy(theta = currentJointAngles[index] + dhParam.theta)
+            }.toFrameTransformation()
+    }
+
+    private val ikEngine = object : InverseKinematicsSolver {
+        override fun solveChain(
+            currentJointAngles: ImmutableList<Double>,
+            targetFrameTransform: FrameTransformation
+        ): ImmutableList<Double> {
+            // TODO: Real IK
+            return currentJointAngles.mapIndexed { index, _ -> index.toDouble() }.toImmutableList()
+        }
+    }
+
+    @Test
+    fun `test homing with real arm`() {
+        val limb1 = DefaultLimb(
+            limb1Id,
+            links,
+            fkEngine,
+            ikEngine,
+            CarloLimbMotionPlanGenerator(ikEngine),
+            DefaultLimbMotionPlanFollower(),
+            links.mapIndexed { index, _ ->
+                SimulatedJointAngleController("$index")
+            }.toImmutableList(),
+            NoopInertialStateEstimator
+        )
+
+        val base = DefaultKinematicBase(
+            SimpleKinematicBaseId("carlo-arm-base"),
+            immutableListOf(limb1),
+            immutableMapOf(limb1Id to FrameTransformation.identity),
+            NoopBodyController
+        )
+
+        val carlo = CarloArm(base)
+        carlo.homeLimbs(200)
     }
 }
