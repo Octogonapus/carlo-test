@@ -163,19 +163,19 @@ internal class CarloArmTest {
 
         device.disconnect().getOrHandle { fail(it) }
     }
+}
 
-    private fun getDevice(injector: Injector) = binding<String, BowlerDevice> {
-        val (device) = injector.getInstance<BowlerDeviceFactory>().makeBowlerDevice(
-            DeviceId(
-                DefaultDeviceTypes.Esp32wroom32,
-                DefaultConnectionMethods.InternetAddress(
-                    InetAddress.getByAddress(
-                        listOf(192, 168, 4, 1).map { it.toByte() }.toByteArray()
-                    )
+private fun getDevice(injector: Injector) = binding<String, BowlerDevice> {
+    val (device) = injector.getInstance<BowlerDeviceFactory>().makeBowlerDevice(
+        DeviceId(
+            DefaultDeviceTypes.Esp32wroom32,
+            DefaultConnectionMethods.InternetAddress(
+                InetAddress.getByAddress(
+                    listOf(192, 168, 4, 1).map { it.toByte() }.toByteArray()
                 )
             )
         )
-        device.connect()
-        device
-    }.getOrHandle { fail(it) }
-}
+    )
+    device.connect()
+    device
+}.getOrHandle { fail(it) }
