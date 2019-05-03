@@ -18,7 +18,7 @@ class CarloArm(private val base: KinematicBase) {
             val homePosition = limb.links.map { it.dhParam }.toFrameTransformation()
             limb.setDesiredTaskSpaceTransform(
                 homePosition,
-                relaxedMotionConstraints.copy(motionDuration = time)
+                relaxedMotionConstraints.copy(motionDuration = time.toDouble())
             )
         }
 
