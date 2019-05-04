@@ -49,12 +49,12 @@ class CarloLimbMotionPlanGenerator(
 
             val angles = targetAngles.mapIndexed { index, elem ->
                 currentAngles[index] + (elem - currentAngles[index]) * fraction
-            }
+            }.toImmutableList()
 
             LimbMotionPlanStep(
-                angles.toImmutableList(),
+                angles,
                 BasicMotionConstraints(
-                    motionConstraints.motionDuration.toDouble() / numStepsPerPlan,
+                    motionConstraints.motionDuration / numStepsPerPlan,
                     motionConstraints.maximumVelocity,
                     motionConstraints.maximumAcceleration,
                     motionConstraints.maximumJerk
