@@ -41,6 +41,7 @@ import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
 import com.neuronrobotics.bowlerkernel.kinematics.motion.NoopInertialStateEstimator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.DefaultLimbMotionPlanFollower
 import org.jlleitschuh.guice.getInstance
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
 import org.octogonapus.ktguava.collections.immutableListOf
@@ -120,14 +121,19 @@ internal class CarloArmTest {
             NoopBodyController
         )
 
+        val target = FrameTransformation.fromTranslation(10, 0, 0)
         limb1.setDesiredTaskSpaceTransform(
-            FrameTransformation.fromTranslation(10, 0, 0),
+            target,
             BasicMotionConstraints(100, 10, 100, 100)
         )
 
         base.waitToStopMoving()
 
-        println(limb1.getCurrentTaskSpaceTransform())
+        assertTrue(
+            limb1.getCurrentTaskSpaceTransform().translation.isIdentical(
+                target.translation, 1e-10
+            )
+        )
     }
 
     @Test
