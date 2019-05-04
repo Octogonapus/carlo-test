@@ -16,21 +16,19 @@
  */
 package org.octogonapus.carlotest
 
-import com.neuronrobotics.bowlerkernel.kinematics.closedloop.JointAngleController
-import com.neuronrobotics.bowlerkernel.kinematics.motion.MotionConstraints
+import com.google.common.collect.ImmutableList
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.Link
+import com.neuronrobotics.bowlerkernel.kinematics.limb.link.toFrameTransformation
+import com.neuronrobotics.bowlerkernel.kinematics.motion.ForwardKinematicsSolver
+import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
 
-class SimulatedJointAngleController(
-    private val name: String
-) : JointAngleController {
+class CarloFK : ForwardKinematicsSolver {
 
-    private var angle = 0.0
-
-    override fun getCurrentAngle() = angle.also {
-        println("SJAC $name: get $angle")
-    }
-
-    override fun setTargetAngle(angle: Double, motionConstraints: MotionConstraints) {
-        this.angle = angle
-        println("SJAC $name: set $angle")
-    }
+    override fun solveChain(
+        links: ImmutableList<Link>,
+        currentJointAngles: ImmutableList<Double>
+    ): FrameTransformation =
+        links.mapIndexed { index, link ->
+            link.dhParam.copy(theta = currentJointAngles[index] + link.dhParam.theta)
+        }.toFrameTransformation()
 }

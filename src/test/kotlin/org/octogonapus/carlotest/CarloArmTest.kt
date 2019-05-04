@@ -1,9 +1,24 @@
+/*
+ * This file is part of carlo-test.
+ *
+ * carlo-test is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * carlo-test is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with carlo-test.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package org.octogonapus.carlotest
 
 import arrow.core.extensions.either.monad.binding
 import arrow.core.flatMap
 import arrow.core.getOrHandle
-import com.google.common.collect.ImmutableList
 import com.google.inject.Injector
 import com.neuronrobotics.bowlerkernel.hardware.Script
 import com.neuronrobotics.bowlerkernel.hardware.device.BowlerDevice
@@ -20,17 +35,11 @@ import com.neuronrobotics.bowlerkernel.kinematics.base.baseid.SimpleKinematicBas
 import com.neuronrobotics.bowlerkernel.kinematics.closedloop.NoopBodyController
 import com.neuronrobotics.bowlerkernel.kinematics.limb.DefaultLimb
 import com.neuronrobotics.bowlerkernel.kinematics.limb.limbid.SimpleLimbId
-import com.neuronrobotics.bowlerkernel.kinematics.limb.link.DefaultLink
-import com.neuronrobotics.bowlerkernel.kinematics.limb.link.DhParam
-import com.neuronrobotics.bowlerkernel.kinematics.limb.link.Link
-import com.neuronrobotics.bowlerkernel.kinematics.limb.link.LinkType
 import com.neuronrobotics.bowlerkernel.kinematics.limb.link.toFrameTransformation
-import com.neuronrobotics.bowlerkernel.kinematics.motion.ForwardKinematicsSolver
+import com.neuronrobotics.bowlerkernel.kinematics.motion.BasicMotionConstraints
 import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
-import com.neuronrobotics.bowlerkernel.kinematics.motion.InverseKinematicsSolver
 import com.neuronrobotics.bowlerkernel.kinematics.motion.NoopInertialStateEstimator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.DefaultLimbMotionPlanFollower
-import com.neuronrobotics.bowlerkernel.util.Limits
 import org.jlleitschuh.guice.getInstance
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.fail
@@ -41,41 +50,9 @@ import java.net.InetAddress
 
 internal class CarloArmTest {
 
-    private val links: ImmutableList<Link> = immutableListOf(
-        DefaultLink(
-            LinkType.Rotary,
-            DhParam(44.45, 0, 196.85, 0),
-            Limits(180, -180),
-            NoopInertialStateEstimator
-        ),
-        DefaultLink(
-            LinkType.Rotary,
-            DhParam(38.1, 0, 273.05, 0),
-            Limits(180, -180),
-            NoopInertialStateEstimator
-        )
-    )
-
-    private val dhParams = links.map { it.dhParam }.toImmutableList()
-
     private val limb1Id = SimpleLimbId("carlo-arm-limb1")
 
-    private val fkEngine = object : ForwardKinematicsSolver {
-        override fun solveChain(currentJointAngles: ImmutableList<Double>) =
-            dhParams.mapIndexed { index, dhParam ->
-                dhParam.copy(theta = currentJointAngles[index] + dhParam.theta)
-            }.toFrameTransformation()
-    }
-
-    private val ikEngine = object : InverseKinematicsSolver {
-        override fun solveChain(
-            currentJointAngles: ImmutableList<Double>,
-            targetFrameTransform: FrameTransformation
-        ): ImmutableList<Double> {
-            // TODO: Real IK
-            return currentJointAngles.mapIndexed { index, _ -> index.toDouble() + 90 }.toImmutableList()
-        }
-    }
+    private val ikEngine = CarloIK()
 
     @Test
     fun `test homing with real arm`() {
@@ -84,7 +61,7 @@ internal class CarloArmTest {
         val device = getDevice(injector)
 
         val servoFactory = injector.getInstance<UnprovisionedServoFactory>()
-        val servos = links.mapIndexed { index, _ ->
+        val servos = seaArmLinks.mapIndexed { index, _ ->
             servoFactory.makeUnprovisionedServo(
                 device,
                 DefaultAttachmentPoints.Pin((32 + index).toByte())
@@ -93,12 +70,12 @@ internal class CarloArmTest {
 
         val limb1 = DefaultLimb(
             limb1Id,
-            links,
-            fkEngine,
+            seaArmLinks,
+            CarloFK(),
             ikEngine,
             CarloLimbMotionPlanGenerator(ikEngine),
             DefaultLimbMotionPlanFollower(),
-            links.mapIndexed { index, _ ->
+            seaArmLinks.mapIndexed { index, _ ->
                 ServoJointAngleController(servos[index])
             }.toImmutableList(),
             NoopInertialStateEstimator
@@ -111,8 +88,12 @@ internal class CarloArmTest {
             NoopBodyController
         )
 
-        val carlo = CarloArm(base)
-        carlo.homeLimbs(200)
+        limb1.setDesiredTaskSpaceTransform(
+            limb1.links.map { it.dhParam }.toFrameTransformation(),
+            BasicMotionConstraints(100, 10, 100, 100)
+        )
+
+        base.waitToStopMoving()
 
         device.disconnect().mapLeft { fail(it) }
     }
@@ -121,12 +102,12 @@ internal class CarloArmTest {
     fun `test homing with fake arm`() {
         val limb1 = DefaultLimb(
             limb1Id,
-            links,
-            fkEngine,
+            seaArmLinks,
+            CarloFK(),
             ikEngine,
             CarloLimbMotionPlanGenerator(ikEngine),
             DefaultLimbMotionPlanFollower(),
-            links.mapIndexed { index, _ ->
+            seaArmLinks.mapIndexed { index, _ ->
                 SimulatedJointAngleController("$index")
             }.toImmutableList(),
             NoopInertialStateEstimator
@@ -139,8 +120,14 @@ internal class CarloArmTest {
             NoopBodyController
         )
 
-        val carlo = CarloArm(base)
-        carlo.homeLimbs(200)
+        limb1.setDesiredTaskSpaceTransform(
+            FrameTransformation.fromTranslation(10, 0, 0),
+            BasicMotionConstraints(100, 10, 100, 100)
+        )
+
+        base.waitToStopMoving()
+
+        println(limb1.getCurrentTaskSpaceTransform())
     }
 
     @Test

@@ -16,21 +16,10 @@
  */
 package org.octogonapus.carlotest
 
-import com.neuronrobotics.bowlerkernel.kinematics.closedloop.JointAngleController
-import com.neuronrobotics.bowlerkernel.kinematics.motion.MotionConstraints
+import com.neuronrobotics.bowlerkernel.kinematics.base.KinematicBase
 
-class SimulatedJointAngleController(
-    private val name: String
-) : JointAngleController {
-
-    private var angle = 0.0
-
-    override fun getCurrentAngle() = angle.also {
-        println("SJAC $name: get $angle")
-    }
-
-    override fun setTargetAngle(angle: Double, motionConstraints: MotionConstraints) {
-        this.angle = angle
-        println("SJAC $name: set $angle")
+fun KinematicBase.waitToStopMoving() {
+    while (limbs.map { it.isMovingToTaskSpaceTransform() }.reduce { acc, elem -> acc && elem }) {
+        Thread.sleep(1)
     }
 }

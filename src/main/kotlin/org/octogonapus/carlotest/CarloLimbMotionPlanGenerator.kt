@@ -40,6 +40,7 @@ class CarloLimbMotionPlanGenerator(
         val currentAngles = limb.getCurrentJointAngles()
 
         val targetAngles = ikSolver.solveChain(
+            limb.links,
             limb.getCurrentJointAngles(),
             targetTaskSpaceTransform
         )
