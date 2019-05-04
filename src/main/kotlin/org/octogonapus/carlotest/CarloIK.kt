@@ -20,7 +20,7 @@ import com.google.common.collect.ImmutableList
 import com.neuronrobotics.bowlerkernel.kinematics.limb.link.Link
 import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
 import com.neuronrobotics.bowlerkernel.kinematics.motion.InverseKinematicsSolver
-import com.neuronrobotics.kinematicschef.util.toImmutableList
+import org.octogonapus.ktguava.collections.toImmutableList
 import java.lang.Math.toDegrees
 import java.lang.Math.toRadians
 import kotlin.math.PI

@@ -55,11 +55,11 @@ fun DependencyHandler.arrow(name: String) =
 dependencies {
     implementation(kotlin("stdlib-jdk8", kotlinVersion))
     implementation("com.neuronrobotics:bowler-kernel-kinematics:0.0.26")
-    implementation("com.neuronrobotics:bowler-kinematics-core:0.0.16")
+    // implementation("com.neuronrobotics:bowler-kinematics-core:0.0.16")
     implementation(
         group = "org.octogonapus",
         name = "kt-guava-core",
-        version = "0.2.0"
+        version = "0.2.1"
     )
     implementation(
         group = "com.google.guava",
