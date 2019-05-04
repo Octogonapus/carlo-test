@@ -48,7 +48,7 @@ class CarloIK : InverseKinematicsSolver {
             """
             Links and joint angles must have equal length:
             Number of links: ${links.size}
-            Numbe of joint angles: ${currentJointAngles.size}
+            Number of joint angles: ${currentJointAngles.size}
             """.trimIndent()
         }
 
@@ -96,10 +96,10 @@ class CarloIK : InverseKinematicsSolver {
         val (A, C) = lawOfTriangles(l2, l1, vec)
         inv[1] = -toDegrees((A + elevation + toRadians(params[1].theta)))
 
-        when (params[1].alpha.roundToInt()) {
-            180 -> inv[2] = toDegrees(C) - 180 - params[2].theta
-            0 -> inv[2] = -toDegrees(C) + params[2].theta
-            else -> inv[2] = currentJointAngles[2]
+        inv[2] = when (params[1].alpha.roundToInt()) {
+            180 -> toDegrees(C) - 180 - params[2].theta
+            0 -> -toDegrees(C) + params[2].theta
+            else -> currentJointAngles[2]
         }
 
         return inv.toImmutableList()
