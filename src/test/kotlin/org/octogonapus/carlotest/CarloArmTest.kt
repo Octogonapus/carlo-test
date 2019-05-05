@@ -38,6 +38,7 @@ import com.neuronrobotics.bowlerkernel.kinematics.limb.limbid.SimpleLimbId
 import com.neuronrobotics.bowlerkernel.kinematics.limb.link.toFrameTransformation
 import com.neuronrobotics.bowlerkernel.kinematics.motion.BasicMotionConstraints
 import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
+import com.neuronrobotics.bowlerkernel.kinematics.motion.LengthBasedReachabilityCalculator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.NoopInertialStateEstimator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.DefaultLimbMotionPlanFollower
 import org.jlleitschuh.guice.getInstance
@@ -74,6 +75,7 @@ internal class CarloArmTest {
             seaArmLinks,
             CarloFK(),
             ikEngine,
+            LengthBasedReachabilityCalculator(),
             CarloLimbMotionPlanGenerator(ikEngine),
             DefaultLimbMotionPlanFollower(),
             seaArmLinks.mapIndexed { index, _ ->
@@ -106,6 +108,7 @@ internal class CarloArmTest {
             seaArmLinks,
             CarloFK(),
             ikEngine,
+            LengthBasedReachabilityCalculator(),
             CarloLimbMotionPlanGenerator(ikEngine),
             DefaultLimbMotionPlanFollower(),
             seaArmLinks.mapIndexed { index, _ ->
