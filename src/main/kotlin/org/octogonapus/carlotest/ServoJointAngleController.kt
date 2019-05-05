@@ -24,12 +24,7 @@ class ServoJointAngleController(
     private val servo: Servo
 ) : JointAngleController {
 
-    override fun getCurrentAngle() = servo.read().also {
-        println("read $it")
-    }
+    override fun getCurrentAngle() = servo.read()
 
-    override fun setTargetAngle(angle: Double, motionConstraints: MotionConstraints) {
-        println("write $angle")
-        servo.write(angle)
-    }
+    override fun setTargetAngle(angle: Double, motionConstraints: MotionConstraints) = servo.write(angle)
 }

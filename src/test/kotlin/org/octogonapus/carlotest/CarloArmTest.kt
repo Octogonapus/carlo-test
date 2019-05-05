@@ -66,7 +66,7 @@ internal class CarloArmTest {
         val servos = seaArmLinks.mapIndexed { index, _ ->
             servoFactory.makeUnprovisionedServo(
                 device,
-                DefaultAttachmentPoints.Pin((32 + index).toByte())
+                DefaultAttachmentPoints.Pin((33 + index).toByte())
             ).flatMap { device.add(it) }.getOrHandle { fail(it) }
         }.toImmutableList()
 
@@ -76,7 +76,7 @@ internal class CarloArmTest {
             CarloFK(),
             ikEngine,
             LengthBasedReachabilityCalculator(),
-            CarloLimbMotionPlanGenerator(ikEngine),
+            CarloLimbMotionPlanGenerator(ikEngine, 100),
             DefaultLimbMotionPlanFollower(),
             seaArmLinks.mapIndexed { index, _ ->
                 ServoJointAngleController(servos[index])
@@ -91,14 +91,21 @@ internal class CarloArmTest {
             NoopBodyController
         )
 
+        val home = limb1.links.map { it.dhParam }.toFrameTransformation()
         limb1.setDesiredTaskSpaceTransform(
-            limb1.links.map { it.dhParam }.toFrameTransformation(),
-            BasicMotionConstraints(100, 10, 100, 100)
+            home,
+            BasicMotionConstraints(2000, 10, 100, 100)
         )
 
         base.waitToStopMoving()
 
         device.disconnect().mapLeft { fail(it) }
+
+        assertTrue(
+            limb1.getCurrentTaskSpaceTransform().translation.isIdentical(
+                home.translation, 1e-10
+            )
+        )
     }
 
     @Test
@@ -109,7 +116,7 @@ internal class CarloArmTest {
             CarloFK(),
             ikEngine,
             LengthBasedReachabilityCalculator(),
-            CarloLimbMotionPlanGenerator(ikEngine),
+            CarloLimbMotionPlanGenerator(ikEngine, 100),
             DefaultLimbMotionPlanFollower(),
             seaArmLinks.mapIndexed { index, _ ->
                 SimulatedJointAngleController("$index")
@@ -127,7 +134,7 @@ internal class CarloArmTest {
         val target = FrameTransformation.fromTranslation(10, 0, 0)
         limb1.setDesiredTaskSpaceTransform(
             target,
-            BasicMotionConstraints(100, 10, 100, 100)
+            BasicMotionConstraints(2000, 10, 100, 100)
         )
 
         base.waitToStopMoving()
