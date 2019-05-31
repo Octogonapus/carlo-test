@@ -43,6 +43,7 @@ repositories {
     maven("https://dl.bintray.com/arrow-kt/arrow-kt/")
     maven("https://oss.jfrog.org/artifactory/oss-snapshot-local/")
     maven("https://dl.bintray.com/commonwealthrobotics/maven-artifacts")
+    maven(url = "https://dl.bintray.com/s1m0nw1/KtsRunner")
     // mavenLocal()
 }
 
