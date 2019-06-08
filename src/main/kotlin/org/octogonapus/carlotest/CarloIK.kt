@@ -28,6 +28,7 @@ import kotlin.math.abs
 import kotlin.math.acos
 import kotlin.math.asin
 import kotlin.math.cos
+import kotlin.math.hypot
 import kotlin.math.pow
 import kotlin.math.roundToInt
 import kotlin.math.sin
@@ -54,10 +55,8 @@ class CarloIK : InverseKinematicsSolver {
 
         val params = links.map { it.dhParam }
 
-        val lengthXYPlaneVec = sqrt(
-            targetFrameTransform.translationX.pow(2) +
-                    targetFrameTransform.translationY.pow(2)
-        )
+        val lengthXYPlaneVec =
+            hypot(targetFrameTransform.translationX, targetFrameTransform.translationY)
 
         // Handle zero by moving the target out along x a tiny bit
         if (lengthXYPlaneVec == 0.0) {
