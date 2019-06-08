@@ -76,8 +76,9 @@ class CarloIK : InverseKinematicsSolver {
         val lengthRectangleAdjustedXY = lengthXYPlaneVec * cos(angleRectangleAdjustedXY) - r
 
         val orientation = (angleXYPlaneVec - angleRectangleAdjustedXY).let {
-            if (abs(toDegrees(it)) < 0.01) 0.0 else it
+            if (abs(toDegrees(it)) < 1e-6) 0.0 else it
         }.let {
+            // Orientation is off by 180 for negative x values for some reason so offset it
             if (targetFrameTransform.translationX < 0) it + PI else it
         }
 
