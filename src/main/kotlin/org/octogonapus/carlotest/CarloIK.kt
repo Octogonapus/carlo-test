@@ -99,7 +99,11 @@ class CarloIK : InverseKinematicsSolver {
         }
 
         val inv = DoubleArray(links.size)
-        inv[0] = toDegrees(orientation)
+        inv[0] = if (targetFrameTransform.translationX < 0) {
+            toDegrees(orientation) + 180
+        } else {
+            toDegrees(orientation)
+        }
 
         val elevation = asin(zSet / vec)
         val (A, C) = lawOfTriangles(l2, l1, vec)
