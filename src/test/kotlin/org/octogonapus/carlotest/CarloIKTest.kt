@@ -29,7 +29,7 @@ internal class CarloIKTest {
     @Test
     fun `test 3dof ik`() {
         // TODO: This break with numbers less than zero and with zero
-        (1..30 step 1).map { targetPos ->
+        (0..30 step 1).map { targetPos ->
             val target = FrameTransformation.fromTranslation(targetPos, targetPos, targetPos)
             val resultAngles = ik.solveChain(
                 seaArmLinks,

@@ -56,8 +56,17 @@ class CarloIK : InverseKinematicsSolver {
 
         val lengthXYPlaneVec = sqrt(
             targetFrameTransform.translationX.pow(2) +
-                targetFrameTransform.translationY.pow(2)
+                    targetFrameTransform.translationY.pow(2)
         )
+
+        // Handle zero by moving the target out along x a tiny bit
+        if (lengthXYPlaneVec == 0.0) {
+            return solveChain(
+                links,
+                currentJointAngles,
+                targetFrameTransform * FrameTransformation.fromTranslation(1e-6, 0, 0)
+            )
+        }
 
         val angleXYPlaneVec = asin(targetFrameTransform.translationY / lengthXYPlaneVec)
 
