@@ -77,6 +77,8 @@ class CarloIK : InverseKinematicsSolver {
 
         val orientation = (angleXYPlaneVec - angleRectangleAdjustedXY).let {
             if (abs(toDegrees(it)) < 0.01) 0.0 else it
+        }.let {
+            if (targetFrameTransform.translationX < 0) it + PI else it
         }
 
         val ySet = lengthRectangleAdjustedXY * sin(orientation)
@@ -99,11 +101,7 @@ class CarloIK : InverseKinematicsSolver {
         }
 
         val inv = DoubleArray(links.size)
-        inv[0] = if (targetFrameTransform.translationX < 0) {
-            toDegrees(orientation) + 180
-        } else {
-            toDegrees(orientation)
-        }
+        inv[0] = toDegrees(orientation)
 
         val elevation = asin(zSet / vec)
         val (A, C) = lawOfTriangles(l2, l1, vec)
