@@ -92,7 +92,7 @@ class CarloIK : InverseKinematicsSolver {
             throw IllegalStateException(
                 """
                 Hypot too long:
-                vect: $vec
+                vec: $vec
                 l1: $l1
                 l2: $l2
                 lengthRectangleAdjustedXY: $lengthRectangleAdjustedXY
@@ -116,17 +116,10 @@ class CarloIK : InverseKinematicsSolver {
         return inv.toImmutableList()
     }
 
-    private fun lawOfTriangles(
-        l2: Double,
-        l1: Double,
-        vec: Double
-    ): Pair<Double, Double> {
-        val a = l2
-        val b = l1
-        val c = vec
-        val A = acos((b.pow(2) + c.pow(2) - a.pow(2)) / (2 * b * c))
-        val B = acos((c.pow(2) + a.pow(2) - b.pow(2)) / (2 * a * c))
-        val C = PI - A - B
-        return A to C
+    private fun lawOfTriangles(a: Double, b: Double, c: Double): Pair<Double, Double> {
+        val outA = acos((b.pow(2) + c.pow(2) - a.pow(2)) / (2 * b * c))
+        val outB = acos((c.pow(2) + a.pow(2) - b.pow(2)) / (2 * a * c))
+        val outC = PI - outA - outB
+        return outA to outC
     }
 }
