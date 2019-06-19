@@ -26,10 +26,10 @@ import com.neuronrobotics.bowlerkernel.hardware.device.BowlerDeviceFactory
 import com.neuronrobotics.bowlerkernel.hardware.device.deviceid.DefaultConnectionMethods
 import com.neuronrobotics.bowlerkernel.hardware.device.deviceid.DefaultDeviceTypes
 import com.neuronrobotics.bowlerkernel.hardware.device.deviceid.DeviceId
-import com.neuronrobotics.bowlerkernel.hardware.deviceresource.provisioned.DigitalState
+import com.neuronrobotics.bowlerkernel.hardware.deviceresource.provisioned.nongroup.DigitalState
 import com.neuronrobotics.bowlerkernel.hardware.deviceresource.resourceid.DefaultAttachmentPoints
-import com.neuronrobotics.bowlerkernel.hardware.deviceresource.unprovisioned.UnprovisionedDigitalOutFactory
-import com.neuronrobotics.bowlerkernel.hardware.deviceresource.unprovisioned.UnprovisionedServoFactory
+import com.neuronrobotics.bowlerkernel.hardware.deviceresource.unprovisioned.nongroup.UnprovisionedDigitalOutFactory
+import com.neuronrobotics.bowlerkernel.hardware.deviceresource.unprovisioned.nongroup.UnprovisionedServoFactory
 import com.neuronrobotics.bowlerkernel.kinematics.base.DefaultKinematicBase
 import com.neuronrobotics.bowlerkernel.kinematics.base.baseid.SimpleKinematicBaseId
 import com.neuronrobotics.bowlerkernel.kinematics.closedloop.NoopBodyController
@@ -40,7 +40,10 @@ import com.neuronrobotics.bowlerkernel.kinematics.motion.BasicMotionConstraints
 import com.neuronrobotics.bowlerkernel.kinematics.motion.FrameTransformation
 import com.neuronrobotics.bowlerkernel.kinematics.motion.LengthBasedReachabilityCalculator
 import com.neuronrobotics.bowlerkernel.kinematics.motion.NoopInertialStateEstimator
+import com.neuronrobotics.bowlerkernel.kinematics.motion.approxEquals
 import com.neuronrobotics.bowlerkernel.kinematics.motion.plan.DefaultLimbMotionPlanFollower
+import com.neuronrobotics.kinematicschef.GeneralForwardKinematicsSolver
+import com.neuronrobotics.kinematicschef.GeneralInverseKinematicsSolver
 import org.jlleitschuh.guice.getInstance
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -54,7 +57,7 @@ internal class CarloArmTest {
 
     private val limb1Id = SimpleLimbId("carlo-arm-limb1")
 
-    private val ikEngine = CarloIK()
+    private val ikEngine = GeneralInverseKinematicsSolver(seaArmLinks)
 
     @Test
     fun `test homing with real arm`() {
@@ -73,10 +76,10 @@ internal class CarloArmTest {
         val limb1 = DefaultLimb(
             limb1Id,
             seaArmLinks,
-            CarloFK(),
-            ikEngine,
+            GeneralForwardKinematicsSolver(),
+            ikEngine.solver,
             LengthBasedReachabilityCalculator(),
-            CarloLimbMotionPlanGenerator(ikEngine, 100),
+            CarloLimbMotionPlanGenerator(ikEngine.solver, 100),
             DefaultLimbMotionPlanFollower(),
             seaArmLinks.mapIndexed { index, _ ->
                 ServoJointAngleController(servos[index])
@@ -102,7 +105,7 @@ internal class CarloArmTest {
         device.disconnect().mapLeft { fail(it) }
 
         assertTrue(
-            limb1.getCurrentTaskSpaceTransform().translation.isIdentical(
+            limb1.getCurrentTaskSpaceTransform().translation.approxEquals(
                 home.translation, 1e-10
             )
         )
@@ -113,7 +116,7 @@ internal class CarloArmTest {
         val limb1 = DefaultLimb(
             limb1Id,
             seaArmLinks,
-            CarloFK(),
+            GeneralForwardKinematicsSolver(),
             ikEngine,
             LengthBasedReachabilityCalculator(),
             CarloLimbMotionPlanGenerator(ikEngine, 100),
@@ -140,7 +143,7 @@ internal class CarloArmTest {
         base.waitToStopMoving()
 
         assertTrue(
-            limb1.getCurrentTaskSpaceTransform().translation.isIdentical(
+            limb1.getCurrentTaskSpaceTransform().translation.approxEquals(
                 target.translation, 1e-10
             )
         )

@@ -44,7 +44,7 @@ repositories {
     maven("https://oss.jfrog.org/artifactory/oss-snapshot-local/")
     maven("https://dl.bintray.com/commonwealthrobotics/maven-artifacts")
     maven(url = "https://dl.bintray.com/s1m0nw1/KtsRunner")
-    // mavenLocal()
+    mavenLocal()
 }
 
 fun DependencyHandler.junitJupiter(name: String) =
@@ -55,8 +55,8 @@ fun DependencyHandler.arrow(name: String) =
 
 dependencies {
     implementation(kotlin("stdlib-jdk8", kotlinVersion))
-    implementation("com.neuronrobotics:bowler-kernel-kinematics:0.0.27")
-    // implementation("com.neuronrobotics:bowler-kinematics-core:0.0.16")
+    implementation("com.neuronrobotics:bowler-kernel-kinematics:0.1.10")
+    implementation("com.neuronrobotics:bowler-kinematics-core:0.1.1")
     implementation(
         group = "org.octogonapus",
         name = "kt-guava-core",

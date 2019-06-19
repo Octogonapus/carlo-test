@@ -16,7 +16,7 @@
  */
 package org.octogonapus.carlotest
 
-import com.neuronrobotics.bowlerkernel.hardware.deviceresource.provisioned.Servo
+import com.neuronrobotics.bowlerkernel.hardware.deviceresource.provisioned.nongroup.Servo
 import com.neuronrobotics.bowlerkernel.kinematics.closedloop.JointAngleController
 import com.neuronrobotics.bowlerkernel.kinematics.motion.MotionConstraints
 
